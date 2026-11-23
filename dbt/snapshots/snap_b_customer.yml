@@ -1,0 +1,9 @@
+snapshots:
+  - name: snap_b_customer
+    relation: source('erp_b', 'customer')
+    description: "Type-2 history of ERP B's customer master: one row per version of each customer."
+    config:
+      schema: snapshots
+      unique_key: CustNum
+      strategy: check
+      check_cols: [Name, Address1, City, Zip, Country, EMailAddress, PhoneNum]

@@ -1,0 +1,37 @@
+name: erpbridge
+version: "1.0.0"
+config-version: 2
+profile: erpbridge
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+snapshot-paths: ["snapshots"]
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Orders dated after this are treated as invalid (an extract cannot contain future orders).
+  max_valid_order_date: "2026-12-31"
+
+models:
+  erpbridge:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+    marts:
+      +materialized: table
+      core:
+        +schema: core
+        +post-hook: "{{ apply_pii_masking() }}"
+      quality:
+        +schema: quality
+
+data_tests:
+  erpbridge:
+    +severity: error
+
+flags:
+  send_anonymous_usage_stats: false

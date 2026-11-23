@@ -1,0 +1,17 @@
+data/
+landing/
+warehouse/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+ai/out/
+__pycache__/
+.pytest_cache/
+logs/
+.venv/
+venv/
+.env
+.env.*
+.idea/
+.vscode/
+.DS_Store

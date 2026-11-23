@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: stg_a__customers
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: stg_b__customers
+    columns:
+      - name: cust_num
+        data_tests: [unique, not_null]
+  - name: stg_a__sales_order_lines
+    columns:
+      - name: order_line_id
+        data_tests: [unique, not_null]
+  - name: stg_a__currency_rates
+    data_tests:
+      - dbt_utils_free_unique_combination:
+          arguments: {columns: [rate_date, currency_code]}
+  - name: stg_a__product_cost_history
+    data_tests:
+      - no_overlapping_intervals:
+          arguments: {key: product_id, start_col: valid_from, end_col: valid_to}

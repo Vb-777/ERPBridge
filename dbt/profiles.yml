@@ -1,0 +1,19 @@
+# Local and CI run on DuckDB; the same project runs on Snowflake with --target snowflake.
+erpbridge:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('ERPBRIDGE_DUCKDB', '../warehouse/erpbridge.duckdb') }}"
+      threads: 2
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD', '') }}"
+      authenticator: "{{ env_var('SNOWFLAKE_AUTHENTICATOR', 'snowflake') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORMER') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'TRANSFORMING') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'ERPBRIDGE') }}"
+      schema: analytics
+      threads: 4

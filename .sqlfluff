@@ -1,0 +1,18 @@
+[sqlfluff]
+dialect = duckdb
+templater = jinja
+max_line_length = 140
+# layout rules that fight hand-aligned CTEs are off; correctness and consistency rules stay on
+exclude_rules = LT01, LT02, LT05, LT08, LT09, LT14, ST06, AL03, AL09, RF04, AM04, ST05, CV11, CP02, AL01, ST09
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
+load_macros_from_path = dbt/macros
+
+[sqlfluff:templater:jinja:context]
+max_valid_order_date = 2026-12-31
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = lower

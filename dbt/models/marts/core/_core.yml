@@ -1,0 +1,138 @@
+version: 2
+
+models:
+  - name: dim_customer
+    description: "Golden customer record across ERP A and ERP B (one row per real customer)."
+    config:
+      contract: {enforced: true}
+    columns:
+      - name: customer_key
+        data_type: varchar
+        description: "'A-<id>' for customers known to ERP A (including those also in ERP B), 'B-<id>' for ERP B-only customers."
+        constraints: [{type: not_null}]
+        data_tests: [unique, not_null]
+      - name: source_systems
+        data_type: varchar
+        data_tests: [{accepted_values: {arguments: {values: ['A', 'B', 'A+B']}}}]
+      - name: a_customer_id
+        data_type: integer
+      - name: b_cust_num
+        data_type: integer
+      - name: customer_kind
+        data_type: varchar
+      - name: customer_name
+        data_type: varchar
+        description: "Person or company name. Personal data for individual buyers, so masked for BI."
+        meta: {pii: true}
+        data_tests: [not_null]
+      - name: company_name
+        data_type: varchar
+        description: "Company name for store/reseller customers only (not personal data)."
+      - name: address_line1
+        data_type: varchar
+        meta: {pii: true}
+      - name: city
+        data_type: varchar
+      - name: postal_code
+        data_type: varchar
+      - name: country_code
+        data_type: varchar
+        data_tests: [not_null]
+      - name: email
+        data_type: varchar
+        meta: {pii: true}
+      - name: phone
+        data_type: varchar
+        meta: {pii: true}
+      - name: match_rule
+        data_type: varchar
+        description: "Which matching rule linked the ERP B record to ERP A (null if not linked)."
+
+  - name: dim_product
+    columns:
+      - name: product_key
+        data_tests: [unique, not_null]
+      - name: product_number
+        data_tests: [unique, not_null]
+
+  - name: dim_date
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+
+  - name: fct_sales_order_line
+    description: "Valid order lines from both ERPs in USD, with point-in-time standard cost and margin."
+    config:
+      contract: {enforced: true}
+    columns:
+      - name: order_line_key
+        description: "'A-<order>-<line>' or 'B-<order>-<line>'; unique across both ERPs."
+        data_type: varchar
+        constraints: [{type: not_null}]
+        data_tests: [unique, not_null]
+      - name: source_system
+        description: "ERP the line came from: A (group ERP) or B (acquired business)."
+        data_type: varchar
+        data_tests: [{accepted_values: {arguments: {values: ['A', 'B']}}}]
+      - name: order_id
+        description: "Order number in the source ERP."
+        data_type: integer
+      - name: order_line_id
+        description: "Line number (ERP B) or detail id (ERP A) within the source order."
+        data_type: integer
+      - name: order_date
+        description: "Order date as recorded by the source ERP."
+        data_type: date
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_date'), field: date_day}}
+      - name: customer_key
+        description: "Golden customer key from dim_customer (same key for a customer present in both ERPs)."
+        data_type: varchar
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_customer'), field: customer_key}}
+      - name: product_key
+        description: "ERP A product id; -1 when ERP B's part has no MDM cross-reference."
+        data_type: integer
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_product'), field: product_key}}
+      - name: quantity
+        description: "Units ordered (always positive; non-positive lines are quarantined)."
+        data_type: integer
+      - name: currency_code
+        description: "Currency the order was priced in."
+        data_type: varchar
+        data_tests: [{accepted_values: {arguments: {values: ['USD', 'EUR', 'GBP']}}}]
+      - name: unit_price_local
+        description: "Unit price in the order currency, after discount for ERP B."
+        data_type: numeric(18,4)
+      - name: usd_to_currency
+        description: "USD-to-order-currency average rate on the order date (1 for USD)."
+        data_type: numeric(18,6)
+      - name: net_amount_usd
+        description: "Line amount in USD, rounded half-up to the cent."
+        data_type: numeric(18,2)
+        data_tests: [not_null]
+      - name: unit_standard_cost_usd
+        description: "Standard cost per unit in force on the order date (see cost_basis)."
+        data_type: numeric(18,4)
+      - name: cost_basis
+        description: "How the cost was found: in_force interval, latest_prior (history gap), product_master (no history), unmapped_product."
+        data_type: varchar
+        data_tests: [{accepted_values: {arguments: {values: ['in_force', 'latest_prior', 'product_master', 'unmapped_product']}}}]
+      - name: gross_margin_usd
+        description: "net_amount_usd minus quantity x unit_standard_cost_usd."
+        data_type: numeric(18,2)
+      - name: loaded_at
+        description: "When the source row was loaded into RAW; drives incremental processing."
+        data_type: timestamp
+
+  - name: fct_purchase_order_line
+    columns:
+      - name: purchase_order_line_id
+        data_tests: [unique, not_null]
+      - name: product_key
+        data_tests:
+          - relationships: {arguments: {to: ref('dim_product'), field: product_key}}

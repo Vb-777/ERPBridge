@@ -1,0 +1,77 @@
+version: 2
+models:
+  - name: int_customer_matches
+    columns:
+      - name: b_id
+        data_tests: [unique, not_null]
+      - name: a_id
+        description: "An ERP A customer is linked to at most one ERP B customer."
+        data_tests: [unique, not_null]
+  - name: int_customer_links
+    columns:
+      - name: b_id
+        data_tests: [unique, not_null]
+      - name: a_id
+        data_tests: [unique, not_null]
+  - name: int_a_customer_canonical
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+
+unit_tests:
+  - name: match_rules_link_variants_and_reject_household_members
+    description: "Same surname and address but a different first name is a different person; an initial or a re-ordered name is the same one."
+    model: int_customer_matches
+    given:
+      - input: ref('int_customer_match_candidates')
+        rows:
+          # household member: same surname + address, different first name -> no match
+          - {b_id: '1', a_id: '10', customer_kind: person, email_match: false, phone_match: false, address_sim: 1.0, company_sim: 0.6, last_name_sim: 1.0, full_name_sim: 0.80, first_name_sim: 0.55, first_initial_match: false}
+          # "J. Smith" for "John Smith" at the same address -> match on initial
+          - {b_id: '2', a_id: '20', customer_kind: person, email_match: false, phone_match: false, address_sim: 0.97, company_sim: 0.7, last_name_sim: 1.0, full_name_sim: 0.85, first_name_sim: 0.0, first_initial_match: true}
+          # same e-mail and similar name -> match even if the address moved
+          - {b_id: '3', a_id: '30', customer_kind: person, email_match: true, phone_match: false, address_sim: 0.40, company_sim: 0.9, last_name_sim: 0.95, full_name_sim: 0.95, first_name_sim: 1.0, first_initial_match: false}
+          # company with "Inc." vs "Incorporated" (normalised upstream) at the same address -> match
+          - {b_id: '4', a_id: '40', customer_kind: company, email_match: false, phone_match: false, address_sim: 0.99, company_sim: 0.97, last_name_sim: 0.5, full_name_sim: 0.9, first_name_sim: 0.5, first_initial_match: false}
+          # two ERP B records competing for one ERP A record -> only the better one wins
+          - {b_id: '5', a_id: '50', customer_kind: company, email_match: false, phone_match: false, address_sim: 0.99, company_sim: 0.99, last_name_sim: 0.5, full_name_sim: 0.9, first_name_sim: 0.5, first_initial_match: false}
+          - {b_id: '6', a_id: '50', customer_kind: company, email_match: false, phone_match: false, address_sim: 0.90, company_sim: 0.92, last_name_sim: 0.5, full_name_sim: 0.9, first_name_sim: 0.5, first_initial_match: false}
+    expect:
+      rows:
+        - {b_id: '2', a_id: '20', match_rule: 'person name + address'}
+        - {b_id: '3', a_id: '30', match_rule: 'email + name'}
+        - {b_id: '4', a_id: '40', match_rule: 'company name + address'}
+        - {b_id: '5', a_id: '50', match_rule: 'company name + address'}
+
+  - name: order_line_validation_reasons
+    description: "Each defect type gets its own reason; a clean line gets none."
+    model: int_b_order_lines_validated
+    overrides:
+      vars: {max_valid_order_date: "2026-12-31"}
+    given:
+      - input: ref('stg_b__order_lines')
+        rows:
+          - {order_id: 1, order_line_id: 1, order_date: '2025-01-02', cust_num: 7, currency_code: EUR, part_num: P, quantity: 2, unit_price_local: 10, discount_pct: 0}
+          - {order_id: 2, order_line_id: 1, order_date: '2025-01-02', cust_num: 999, currency_code: EUR, part_num: P, quantity: 2, unit_price_local: 10, discount_pct: 0}
+          - {order_id: 3, order_line_id: 1, order_date: '2031-01-02', cust_num: 7, currency_code: EUR, part_num: P, quantity: 2, unit_price_local: 10, discount_pct: 0}
+          - {order_id: 4, order_line_id: 1, order_date: '2025-01-02', cust_num: 7, currency_code: null, part_num: P, quantity: 2, unit_price_local: 10, discount_pct: 0}
+          - {order_id: 5, order_line_id: 1, order_date: '2025-01-02', cust_num: 7, currency_code: EUR, part_num: P, quantity: 0, unit_price_local: 10, discount_pct: 0}
+          - {order_id: 6, order_line_id: 1, order_date: '2025-01-02', cust_num: 7, currency_code: EUR, part_num: P, quantity: 1, unit_price_local: 10, discount_pct: 0}
+          - {order_id: 6, order_line_id: 1, order_date: '2025-01-02', cust_num: 7, currency_code: EUR, part_num: P, quantity: 1, unit_price_local: 10, discount_pct: 0}
+          - {order_id: 7, order_line_id: 1, order_date: '2025-01-03', cust_num: 7, currency_code: EUR, part_num: P, quantity: 1, unit_price_local: 10, discount_pct: 0}
+      - input: ref('stg_b__customers')
+        rows:
+          - {cust_num: 7}
+      - input: ref('stg_a__currency_rates')
+        rows:
+          - {rate_date: '2025-01-02', currency_code: EUR, usd_to_currency: 0.9}
+    expect:
+      rows:
+        - {order_id: 1, reject_reason: null}
+        - {order_id: 2, reject_reason: orphan_customer}
+        - {order_id: 3, reject_reason: invalid_order_date}
+        - {order_id: 4, reject_reason: missing_currency}
+        - {order_id: 5, reject_reason: bad_quantity}
+        - {order_id: 6, reject_reason: null}
+        - {order_id: 6, reject_reason: duplicate_line}
+        - {order_id: 7, reject_reason: missing_fx_rate}

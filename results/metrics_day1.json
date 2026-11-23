@@ -1,0 +1,105 @@
+{
+ "mdm": {
+  "b_customers": 2500,
+  "all": {
+   "true_matches": 1500,
+   "predicted_matches": 1490,
+   "correct": 1488,
+   "false_merges": 2,
+   "missed": 12,
+   "precision": 0.9987,
+   "recall": 0.992,
+   "f1": 0.9953
+  },
+  "dev_even_ids": {
+   "true_matches": 743,
+   "predicted_matches": 739,
+   "correct": 739,
+   "false_merges": 0,
+   "missed": 4,
+   "precision": 1.0,
+   "recall": 0.9946,
+   "f1": 0.9973
+  },
+  "test_odd_ids": {
+   "true_matches": 757,
+   "predicted_matches": 751,
+   "correct": 749,
+   "false_merges": 2,
+   "missed": 8,
+   "precision": 0.9973,
+   "recall": 0.9894,
+   "f1": 0.9934
+  },
+  "household_false_merges": 0,
+  "household_cases": 200,
+  "a_duplicate_store_records_collapsed": 635,
+  "by_rule": {
+   "email + name": 911,
+   "person name + address": 528,
+   "company name + address": 37,
+   "person full name + address": 14
+  }
+ },
+ "fx": {
+  "b_lines_in_fact": 26830,
+  "exact_to_the_cent": 26830,
+  "max_abs_diff_usd": 0.0
+ },
+ "defects": {
+  "orphan_customer": {
+   "injected": 25,
+   "caught": 25,
+   "wrongly_flagged": 0
+  },
+  "invalid_order_date": {
+   "injected": 10,
+   "caught": 10,
+   "wrongly_flagged": 0
+  },
+  "missing_currency": {
+   "injected": 15,
+   "caught": 15,
+   "wrongly_flagged": 0
+  },
+  "bad_quantity": {
+   "injected": 40,
+   "caught": 40,
+   "wrongly_flagged": 0
+  },
+  "duplicate_line": {
+   "injected": 30,
+   "caught": 30,
+   "wrongly_flagged": 0
+  },
+  "other_reasons": {}
+ },
+ "unmapped": {
+  "unmapped_parts": 6,
+  "lines_on_unmapped_member": 1039,
+  "expected": 1039,
+  "unmapped_revenue_usd": 989355.13
+ },
+ "totals": {
+  "fact_lines_by_source": {
+   "A": 121317,
+   "B": 26830
+  },
+  "revenue_usd_by_source": {
+   "A": 109846380.9,
+   "B": 40110609.98
+  },
+  "golden_customers": {
+   "A": 17695,
+   "A+B": 1490,
+   "B": 1010
+  },
+  "cost_basis": {
+   "in_force": 141720,
+   "latest_prior": 64,
+   "product_master": 5324,
+   "unmapped_product": 1039
+  },
+  "revenue_in_shared_customers_usd": 31660856.98
+ }
+}

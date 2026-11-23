@@ -1,0 +1,2 @@
+# nested replace() chains from the mdm_* macros exceed sqlfluff parse depth; covered by dbt build + unit tests instead
+dbt/models/intermediate/int_customers_normalised.sql

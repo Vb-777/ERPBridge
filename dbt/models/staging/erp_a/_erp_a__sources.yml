@@ -1,0 +1,42 @@
+version: 2
+sources:
+  - name: erp_a
+    description: "ERP A: the group's main ERP (Microsoft AdventureWorks OLTP sample: a bicycle manufacturer). Loaded as text by load/load.py."
+    schema: raw_erp_a
+    loaded_at_field: _loaded_at
+    tables:
+      - name: salesorderheader
+      - name: salesorderdetail
+      - name: customer
+      - name: store
+      - name: person
+        columns:
+          - name: FirstName
+            meta: {pii: true}
+          - name: LastName
+            meta: {pii: true}
+      - name: emailaddress
+        columns:
+          - name: EmailAddress
+            meta: {pii: true}
+      - name: personphone
+        columns:
+          - name: PhoneNumber
+            meta: {pii: true}
+      - name: address
+        columns:
+          - name: AddressLine1
+            meta: {pii: true}
+      - name: businessentityaddress
+      - name: stateprovince
+      - name: countryregion
+      - name: salesterritory
+      - name: currencyrate
+      - name: product
+      - name: productsubcategory
+      - name: productcategory
+      - name: productcosthistory
+      - name: productlistpricehistory
+      - name: purchaseorderheader
+      - name: purchaseorderdetail
+      - name: vendor
